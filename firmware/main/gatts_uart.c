@@ -745,8 +745,8 @@ void app_main(void)
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
         .source_clk = UART_SCLK_DEFAULT,
     };
-    int intr_alloc_flags = 0;
-    uint8_t data[1024] = {0};
+    //int intr_alloc_flags = 0;
+    //uint8_t data[1024] = {0};
     uart_driver_install(1, 1024 * 2, 0, 0, NULL, 0);
     uart_param_config(1, &uart_config);
     uart_set_pin(1, 1, 2, -1, -1);

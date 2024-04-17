@@ -15,6 +15,13 @@
 			"style": {
 				"navigationBarTitleText": "连接蓝牙"
 				}
+		},
+		
+		{
+			"path": "pages/mqtt_link/mqtt_link",
+			"style": {
+				"navigationBarTitleText": "连接MQTT"
+				}
 		}
 	],
 	"globalStyle": {
