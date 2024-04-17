@@ -1,84 +1,96 @@
 <template>
-	<view >
+	<view>
+			<view>
+				<scroll-view style="overflow: scroll;overflow-y: scroll;" :scroll-top="scrollTop" scroll-y="true" class="scroll-Y" 
+				show-scrollbar="true" >
+					<view id="demo1" class="scroll-view-item uni-bg-red">A</view>
+					<view id="demo2" class="scroll-view-item uni-bg-green">B</view>
+					<view id="demo3" class="scroll-view-item uni-bg-blue">C</view>
+				</scroll-view> 
+			</view>
+	<!-- <u-input style="overflow: scroll;overflow-y: scroll;" v-model="in_text" type="textarea" :border="true" :auto-height="false" :disabled="true"/>
+	 -->
+				<view class="uni-textarea">
+					<textarea placeholder-style="color:#F76260" placeholder="占位符字体是红色的"/>
+				</view>
 		<u-row gutter="16">
-			<u-col span="6">
-				<u-button >无设备</u-button>
-			</u-col>
 
 			<u-col span="3">
-				<u-button @click="open_ble_link">连接设备1</u-button>
+				<u-button @click="open_ble_link">连接设备</u-button>
 			</u-col>
 		</u-row>
-		<u-row gutter="16">
-			<u-col span="3">
-				<u-button @click="connect">连接MQTT</u-button>
-			</u-col>
-		</u-row>
-
-		
-						<div class="dajianshi ">
-							<span></span>
-							<span></span>
-							<span></span>
-							<span></span>
-							<span></span>
-						</div>
 	</view>
 </template>
 
 <script>
-	
-    import { v4 } from 'uuid';
-    import {
-        MQTT_IP,
-        MQTT_OPTIONS
-    } from '@/utils/mqtt.js';
-    var mqtt = require('mqtt/dist/mqtt.js')
-    var client
-    export default {
-        data() {
-            return {
-                topic: 'testtopic/yu1' //要订阅的主题
-            }
-        },
-        mounted() {//this.connect() //连接
-        },
-        methods: {
-			open_ble_link(){
-				
-				uni.navigateTo({
-					url: "../ble_link/ble_link"
-				});
-				console.log("1");
-			},
-            connect() {
-				console.log("1");
-                MQTT_OPTIONS.clientId = v4()
-                var that = this
-                
-                client = mqtt.connect('wss://' + MQTT_IP, MQTT_OPTIONS)
-                
-                client.on('connect', function() {
-                    console.log('连接成功')
-                    client.subscribe(that.topic, function(err) {
-                        if (!err) {
-                            console.log('订阅成功')
-                        }
-                    })
-                }).on('reconnect', function(error) {
-                    console.log('正在重连...', that.topic)
-                }).on('error', function(error) {
-                    console.log('连接失败...', error)
-                }).on('end', function() {
-                    console.log('连接断开')
-                }).on('message', function(topic, message) {
-                    console.log('接收推送信息：', message.toString())
-                })
-            }
-        }
-    }
+	    export default {
+	        data() {
+	            return {
+					scrollTop: 0,
+					in_text:'1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n \
+					1111111111111111\n ',
+	            }
+	        },
+	        mounted() {
+	        },
+	        methods: {
+				open_ble_link(){
+					
+					uni.navigateTo({
+						url: "../ble_link/ble_link"
+					});
+					console.log("1");
+				},
+	        
+	        }
+	    }
 </script>
 
 <style>
-
+scroll-view ::v-deep ::-webkit-scrollbar {
+		    display: unset; 
+		    width: unset; 
+		    height: unset; 
+		    -webkit-appearance: unset; 
+		    background: unset;
+	}
+	.scroll-Y {
+		height: 300rpx;
+	}
+	.scroll-view_H {
+		white-space: nowrap;
+		width: 100%;
+	}
+	.scroll-view-item {
+		height: 300rpx;
+		line-height: 300rpx;
+		text-align: center;
+		font-size: 36rpx;
+	}
+	.scroll-view-item_H {
+		display: inline-block;
+		width: 100%;
+		height: 300rpx;
+		line-height: 300rpx;
+		text-align: center;
+		font-size: 36rpx;
+	}
 </style>
