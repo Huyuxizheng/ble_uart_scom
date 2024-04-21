@@ -51,7 +51,7 @@
                   <el-col :span="4">
 
                     <el-button style="margin: 0px 0px 0px 0px;  " 
-                   icon="SwitchButton" @click="close_ble_link"
+                   icon="CloseBold" @click="close_ble_link"
                   type="danger" circle   > </el-button>
                   </el-col>
                 </el-row>
