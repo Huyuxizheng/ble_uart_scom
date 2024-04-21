@@ -1,24 +1,40 @@
 <template>
 	<view>
-			<view>
-				<scroll-view style="overflow: scroll;overflow-y: scroll;" :scroll-top="scrollTop" scroll-y="true" class="scroll-Y" 
-				show-scrollbar="true" >
-					<view id="demo1" class="scroll-view-item uni-bg-red">A</view>
-					<view id="demo2" class="scroll-view-item uni-bg-green">B</view>
-					<view id="demo3" class="scroll-view-item uni-bg-blue">C</view>
-				</scroll-view> 
-			</view>
-	<!-- <u-input style="overflow: scroll;overflow-y: scroll;" v-model="in_text" type="textarea" :border="true" :auto-height="false" :disabled="true"/>
-	 -->
-				<view class="uni-textarea">
-					<textarea placeholder-style="color:#F76260" placeholder="占位符字体是红色的"/>
-				</view>
-		<u-row gutter="16">
 
+	<scroll-view  class="u-border u-m-10" 
+	style="height: 70vh;width: auto;white-space: pre-line;background-color: #f1f1f1;" 
+	:scroll-top="scrollTop" 
+	scroll-y="true"  
+	show-scrollbar="true" >
+	
+		<div  ref="out_scrollbar_div">
+			<p >{{in_text}}</p>
+		</div>
+	</scroll-view> 
+
+
+
+		<u-row gutter="16">
 			<u-col span="3">
 				<u-button @click="open_ble_link">连接设备</u-button>
 			</u-col>
+			<u-col span="3">
+				<u-button @click="to_out_botton">发送</u-button>
+			</u-col>
+			<u-col span="1">
+			</u-col>
+			<u-col span="2">
+				<u-switch v-model="input_up"/>
+			</u-col>
+			<u-col span="3">
+				<p >窗口滚动</p>
+			</u-col>
 		</u-row>
+		
+		
+		<u-input style="height: 150rpx;width: auto;"
+		v-model="send_text" type="textarea" :border="true" />
+
 	</view>
 </template>
 
@@ -26,27 +42,10 @@
 	    export default {
 	        data() {
 	            return {
+					input_up:true,
 					scrollTop: 0,
-					in_text:'1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n \
-					1111111111111111\n ',
+					in_text:'1111',
+					send_text:'2222',
 	            }
 	        },
 	        mounted() {
@@ -59,38 +58,15 @@
 					});
 					console.log("1");
 				},
+				to_out_botton(){
+					this.scrollTop = this.$refs.out_scrollbar_div.clientHeight;
+				}
 	        
 	        }
 	    }
 </script>
 
 <style>
-scroll-view ::v-deep ::-webkit-scrollbar {
-		    display: unset; 
-		    width: unset; 
-		    height: unset; 
-		    -webkit-appearance: unset; 
-		    background: unset;
-	}
-	.scroll-Y {
-		height: 300rpx;
-	}
-	.scroll-view_H {
-		white-space: nowrap;
-		width: 100%;
-	}
-	.scroll-view-item {
-		height: 300rpx;
-		line-height: 300rpx;
-		text-align: center;
-		font-size: 36rpx;
-	}
-	.scroll-view-item_H {
-		display: inline-block;
-		width: 100%;
-		height: 300rpx;
-		line-height: 300rpx;
-		text-align: center;
-		font-size: 36rpx;
-	}
+
+
 </style>
