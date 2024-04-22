@@ -359,7 +359,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
             ESP_LOGI(GATTS_TAG, "GATT_WRITE_EVT, value len %d, value :", param->write.len);
             uart_write_bytes(1, (const char *)param->write.value, param->write.len);
             esp_log_buffer_hex(GATTS_TAG, param->write.value, param->write.len);
-            if (gl_profile_tab[PROFILE_A_APP_ID].descr_handle == param->write.handle && param->write.len == 2){
+            if (param->write.len == 2){
                 uint16_t descr_value = param->write.value[1]<<8 | param->write.value[0];
                 if (descr_value == 0x0001){
                     if (a_property & ESP_GATT_CHAR_PROP_BIT_NOTIFY){
@@ -370,6 +370,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
                             notify_data[i] = i%0xff;
                         }
                         //the size of notify_data[] need less than MTU size
+                        esp_log_buffer_hex(GATTS_TAG, notify_data, 15);
                         esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, gl_profile_tab[PROFILE_A_APP_ID].char_handle,
                                                 sizeof(notify_data), notify_data, false);
                     }
@@ -746,22 +747,22 @@ void app_main(void)
         .source_clk = UART_SCLK_DEFAULT,
     };
     //int intr_alloc_flags = 0;
-    //uint8_t data[1024] = {0};
+    uint8_t data[1024] = {0};
     uart_driver_install(1, 1024 * 2, 0, 0, NULL, 0);
     uart_param_config(1, &uart_config);
     uart_set_pin(1, 1, 2, -1, -1);
 
-    // while (1) {
-    //     // Read data from the UART
-    //     int len = uart_read_bytes(1, data, (1024 - 1), 20 / portTICK_PERIOD_MS);
-    //     // Write data back to the UART
-    //     uart_write_bytes(1, (const char *) data, len);
-    //     if (len) {
-    //         data[len] = '\0';
+    while (1) {
+        // Read data from the UART
+        int len = uart_read_bytes(1, data, (1024 - 1), 20 / portTICK_PERIOD_MS);
+        // Write data back to the UART
+        uart_write_bytes(1, (const char *) data, len);
+        if (len) {
+            data[len] = '\0';
 
-    //         ESP_LOGI(GATTS_TAG, "Recv str: %s", (char *) data);
-    //     }
-    // }
+            ESP_LOGI(GATTS_TAG, "Recv str: %s", (char *) data);
+        }
+    }
 
     return;
 }
