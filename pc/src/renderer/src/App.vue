@@ -82,7 +82,7 @@
 
         <el-main style="width: 100%;padding-top:0;height:100dvh">
       <el-row style="width: 100%;">
-          <el-card style="width: 100%;height:99%" shadow="always " >
+          <el-card style="width: 100%;height:99%" shadow="always" >
             <el-scrollbar ref="out_scrollbar" style="width: auto;height:99%" height = "calc(100vh - 220px)" always>
               <div ref="out_scrollbar_div">
                 <p style="width: calc(100% - 30px); word-wrap: break-word " v-for="item in msg" >{{ item }}</p>
@@ -92,14 +92,33 @@
         </el-row>
 
         
-        <el-row>
-          <el-switch
-            inline-prompt
-            v-model="send_out_type"
-            active-text="hex发送" active-value = 'hex'
-            inactive-text="str发送" inactive-value = 'str'
-            style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
-          />
+        <el-row  align='middle'>
+          <el-col :span="3">
+            <el-switch
+              inline-prompt
+              v-model="send_out_type"
+              active-text="hex发送" active-value = 'hex'
+              inactive-text="str发送" inactive-value = 'str'
+              style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
+            />
+          </el-col>
+          
+          <el-col :span="5">
+              <el-select
+              v-model="dis_type"
+              placeholder="显示方式"
+              size="small"
+              style="width: 160px"
+            >
+              <el-option
+                v-for="item in dis_type_opt"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+          </el-col>
+          
         </el-row>
           
         <!-- 16进制发送 -->
@@ -150,7 +169,8 @@
 
 <script setup>
 import {watch,ref, onMounted,nextTick } from 'vue';
-import { ElNotification } from 'element-plus'
+import { ElNotification } from 'element-plus';
+import iconv from  'iconv-lite';
 let baud_set = ref();
 let send_out_type = ref('str');
 let baud_conf = 9600;
@@ -187,7 +207,6 @@ watch(baud_set,(newValue,OldValue) => {
 
 
 let crr_open_ble = null;
-let crr_open_ble_service = null;
 let data_send_h = null;
 let data_read_h = null;
 
@@ -196,7 +215,18 @@ let data_read_h = null;
 let link_flag=ref(false);
 let link_ing_flag=ref(false);
 let _reader=null;
-
+let dis_type=ref('GBK');
+const dis_type_opt = [
+  {
+    value: 'hex', label: '以十六进制显示'
+  },
+  {
+    value: 'GBK', label: '以字符串显示-GBK编码'
+  },
+  {
+    value: 'utf-8', label: '以字符串显示-utf-8编码'
+  }
+]
 
 
 //初始化
@@ -220,32 +250,38 @@ onMounted(() =>{
 let crr_open_ble_info = null;
 async function  refreshBle() {
   window.electron.ipcRenderer.send('message-open-ble-mac', '');
-  crr_open_ble = await navigator.bluetooth.requestDevice( {acceptAllDevices: true,optionalServices:['000000ff-0000-1000-8000-00805f9b34fb']});
+  crr_open_ble = await navigator.bluetooth.requestDevice( {filters: [ {services: ['000000ff-0000-1000-8000-00805f9b34fb','000000ee-0000-1000-8000-00805f9b34fb']} ],optionalServices:['000000ff-0000-1000-8000-00805f9b34fb','000000ee-0000-1000-8000-00805f9b34fb']});
   link_flag.value = true;
   link_ing_flag.value = true;
   // ElNotification({
   //   message: '蓝牙连接中',
   //   type: 'info',
   // })
-  try {
-  crr_open_ble.addEventListener('gattserverdisconnected', onDisconnected);
-  await crr_open_ble.gatt.connect();
-  crr_open_ble_service = await crr_open_ble.gatt.getPrimaryService('000000ff-0000-1000-8000-00805f9b34fb');
-  data_send_h = await crr_open_ble_service.getCharacteristic('0000ff01-0000-1000-8000-00805f9b34fb');
-  ElNotification({
-    message: '蓝牙已连接',
-    type: 'info',
-  })
-  } catch (error) {
+    try {
+      crr_open_ble.addEventListener('gattserverdisconnected', onDisconnected);
+      await crr_open_ble.gatt.connect();
+      const service_send = await crr_open_ble.gatt.getPrimaryService('000000ff-0000-1000-8000-00805f9b34fb');
+      data_send_h = await service_send.getCharacteristic('0000ff01-0000-1000-8000-00805f9b34fb');
+
+      const service_read = await crr_open_ble.gatt.getPrimaryService('000000ee-0000-1000-8000-00805f9b34fb');
+      data_read_h = await service_read.getCharacteristic('0000ee01-0000-1000-8000-00805f9b34fb');
+      data_read_h.startNotifications();
+      data_read_h.addEventListener('characteristicvaluechanged',
+      text_out);
+      ElNotification({
+       message: '蓝牙已连接',
+       type: 'info',
+      })
+   }catch (error) {
     ElNotification({
       message: '蓝牙连接失败',
       type: 'info',
     })
+    crr_open_ble.gatt.disconnect();
     ble_list = [];
     bleNamelist_temp.value = [];
     link_flag.value = false;
     crr_open_ble = null;
-    crr_open_ble_service = null;
     data_send_h = null;
   }
   
@@ -264,7 +300,6 @@ function onDisconnected(event) {
   bleNamelist_temp.value = [];
   link_flag.value = false;
   crr_open_ble = null;
-  crr_open_ble_service = null;
   data_send_h = null;
 
 }
@@ -277,32 +312,49 @@ async function  open_ble_link(ble_mac) {
 
  
 let msg=ref([]);
-//  const out_scrollbar = ref();
-// const out_scrollbar_div = ref();
-//  async function  monitor() {
-//    var e;
-//    const textDecoder = new TextDecoder();
-//    const t = port.readable.getReader();
-//    _reader = t;
-//    let currentTime ,lastTime = 0;
-//    let currentdate;
-//          currentdate = new Date();
-//          currentTime = currentdate.getTime();
-//          if(!lastTime){lastTime = currentTime;msg.value.push('['+currentdate.toLocaleString()+':'+currentdate.getMilliseconds().toString().padStart(3, '0')+'] '+o);}
-//          else{
-//            if((currentTime-lastTime)<50)
-//            {
-//              msg.value[msg.value.length - 1] += o;
-//            }
-//            else
-//            {
-//              msg.value.push('['+currentdate.toLocaleString()+':'+currentdate.getMilliseconds().toString().padStart(3, '0')+'] '+o);
-//            }
-//            lastTime = currentTime;
-//          }
-//          nextTick(() => {out_scrollbar.value.setScrollTop(out_scrollbar_div.value.clientHeight);})
+const out_scrollbar = ref();
+const out_scrollbar_div = ref();
 
+
+// function text_is_str(uint8Array) {
+//   for (const value of uint8Array) {
+//     if (value > 'min' || value > max) {
+//       return false;
+//     }
+//   }
+//   return true;
 // }
+function  text_out(event) {
+      const value = new Uint8Array(event.target.value.buffer);
+      console.log(value);
+      let out_text = null;
+
+        if(dis_type.value == 'GBK')
+        {
+          const encoder = new TextDecoder('GBK');
+          const text_gbk = encoder.decode(value);
+          const buf = iconv.encode(text_gbk,'GBK');
+          out_text = iconv.decode(buf,'utf-8');
+        }
+        else if(dis_type.value == 'utf-8')
+        {
+          const encoder = new TextDecoder('utf-8');
+          out_text = encoder.decode(value);
+        }
+        else{
+          out_text = '';
+          for(let i = 0; i < value.length; i++) {
+            let hex = value[i].toString(16);
+            // 补零确保单字节的十六进制数字是两位数
+            hex = ('00' + hex).slice(-2);
+            out_text += hex+' ';
+          }
+        } 
+
+      let currentdate = new Date();
+      msg.value.push('['+currentdate.toLocaleString()+':'+currentdate.getMilliseconds().toString().padStart(3, '0')+'] '+out_text);
+      nextTick(() => {out_scrollbar.value.setScrollTop(out_scrollbar_div.value.clientHeight);})
+}
 
 async function  close_ble_link() {
   crr_open_ble.gatt.disconnect();
@@ -313,7 +365,7 @@ let textarea_str=ref('');
 async function  send_data_str() {
   if(data_send_h)
   {
-    const encoder = new TextEncoder(); // 创建一个TextEncoder实例
+    const encoder = new TextEncoder('GBK'); // 创建一个TextEncoder实例
     const uint8Array = encoder.encode(
       send_true_code.value?
       textarea_str.value.replace(/\\n/g, '\n').replace(/\\r/g, '\r').replace(/\\a/g, '\a').replace(/\\b/g, '\b').replace(/\\t/g, '\t').replace(/\\v/g, '\v').replace(/\\f/g, '\f')
@@ -321,6 +373,7 @@ async function  send_data_str() {
       textarea_str.value
   ); 
     data_send_h.writeValue(uint8Array);
+      console.log(uint8Array);
   }
 }
 

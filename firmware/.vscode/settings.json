@@ -1,7 +1,7 @@
 {
   "C_Cpp.intelliSenseEngine": "default",
-  "idf.portWin": "COM5",
-  "idf.flashType": "UART",
+  "idf.portWin": "COM17",
+  "idf.flashType": "JTAG",
   "idf.adapterTargetName": "esp32c3",
   "idf.openOcdConfigs": [
     "board/esp32c3-builtin.cfg"
@@ -9,6 +9,15 @@
   "files.associations": {
     "uart.h": "c",
     "esp_bt_main.h": "c",
-    "esp_gatt_common_api.h": "c"
+    "esp_gatt_common_api.h": "c",
+    "ratio": "c",
+    "system_error": "c",
+    "array": "c",
+    "functional": "c",
+    "tuple": "c",
+    "type_traits": "c",
+    "utility": "c",
+    "string": "c",
+    "string_view": "c"
   }
 }
