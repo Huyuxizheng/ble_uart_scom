@@ -13,11 +13,9 @@
               <el-button style="width: 40px" icon="Refresh"  @click="refreshBle" />
               <!-- <el-button style="width: 40px" icon="Link" @click="open_ble_link"/> -->
             </el-button-group>
+              <el-input v-model="ble_namePrefix" style="width: 160px" placeholder="过滤蓝牙名" />
 
-            <!-- 断开连接
-            <el-button-group v-if="link_flag">
-              <el-button style="width: 80px" type="success" icon="SwitchButton" @click="close_ble_link">  </el-button>
-            </el-button-group> -->
+            
           </el-space>
         </el-row>
 
@@ -70,6 +68,8 @@
               placeholder="波特率-可直接输入"
               style="width: 90%;"
             >
+            <el-text style="margin-left: 38px;" size="small">  波特率可直接输入</el-text>
+            
               <el-option
                 v-for="item in baud_set_list"
                 :key="item.value"
@@ -184,6 +184,8 @@ const baud_set_list = [
     label: 115200,
   }
 ]
+
+
 watch(baud_set,(newValue,OldValue) => {
   if(isNaN(newValue))
   {
@@ -201,6 +203,12 @@ watch(baud_set,(newValue,OldValue) => {
   }
       console.log(baud_conf);
       console.log(typeof(newValue));
+      let arr = [0x01]
+      arr.push((baud_conf>>0) & 0xff);
+      arr.push((baud_conf>>8) & 0xff);
+      arr.push((baud_conf>>16) & 0xff);
+      arr.push((baud_conf>>24) & 0xff);
+      cmd_send(arr);
  });
 
 
@@ -209,12 +217,13 @@ watch(baud_set,(newValue,OldValue) => {
 let crr_open_ble = null;
 let data_send_h = null;
 let data_read_h = null;
+let cmd_send_h = null;
+let cmd_read_h = null;
 
 
 
 let link_flag=ref(false);
 let link_ing_flag=ref(false);
-let _reader=null;
 let dis_type=ref('GBK');
 const dis_type_opt = [
   {
@@ -245,29 +254,44 @@ onMounted(() =>{
 });
 
 
-
+let ble_namePrefix=ref();
+watch(ble_namePrefix,(newValue,OldValue) => {
+  refreshBle();
+ });
 
 let crr_open_ble_info = null;
 async function  refreshBle() {
   window.electron.ipcRenderer.send('message-open-ble-mac', '');
-  crr_open_ble = await navigator.bluetooth.requestDevice( {filters: [ {services: ['000000ff-0000-1000-8000-00805f9b34fb','000000ee-0000-1000-8000-00805f9b34fb']} ],optionalServices:['000000ff-0000-1000-8000-00805f9b34fb','000000ee-0000-1000-8000-00805f9b34fb']});
+  if(ble_namePrefix.value)
+  {
+    crr_open_ble = await navigator.bluetooth.requestDevice( {filters: [ {namePrefix: ble_namePrefix.value} ],
+    optionalServices:['000000ff-0000-1000-8000-00805f9b34fb']});
+  }
+  else
+  {
+    crr_open_ble = await navigator.bluetooth.requestDevice( {acceptAllDevices: true,
+    optionalServices:['000000ff-0000-1000-8000-00805f9b34fb']});
+
+  }
+  
   link_flag.value = true;
   link_ing_flag.value = true;
-  // ElNotification({
-  //   message: '蓝牙连接中',
-  //   type: 'info',
-  // })
     try {
       crr_open_ble.addEventListener('gattserverdisconnected', onDisconnected);
       await crr_open_ble.gatt.connect();
-      const service_send = await crr_open_ble.gatt.getPrimaryService('000000ff-0000-1000-8000-00805f9b34fb');
-      data_send_h = await service_send.getCharacteristic('0000ff01-0000-1000-8000-00805f9b34fb');
-
-      const service_read = await crr_open_ble.gatt.getPrimaryService('000000ee-0000-1000-8000-00805f9b34fb');
-      data_read_h = await service_read.getCharacteristic('0000ee01-0000-1000-8000-00805f9b34fb');
+      const service = await crr_open_ble.gatt.getPrimaryService('000000ff-0000-1000-8000-00805f9b34fb');
+      data_send_h = await service.getCharacteristic('0000ff02-0000-1000-8000-00805f9b34fb');
+      data_read_h = await service.getCharacteristic('0000ff01-0000-1000-8000-00805f9b34fb');
       data_read_h.startNotifications();
       data_read_h.addEventListener('characteristicvaluechanged',
       text_out);
+
+      cmd_send_h = await service.getCharacteristic('0000ff04-0000-1000-8000-00805f9b34fb');
+      cmd_read_h = await service.getCharacteristic('0000ff03-0000-1000-8000-00805f9b34fb');
+      cmd_read_h.startNotifications();
+      cmd_read_h.addEventListener('characteristicvaluechanged',
+      cmd_read_cb);
+
       ElNotification({
        message: '蓝牙已连接',
        type: 'info',
@@ -277,7 +301,7 @@ async function  refreshBle() {
       message: '蓝牙连接失败',
       type: 'info',
     })
-    crr_open_ble.gatt.disconnect();
+    close_ble_link();
     ble_list = [];
     bleNamelist_temp.value = [];
     link_flag.value = false;
@@ -288,6 +312,13 @@ async function  refreshBle() {
   link_ing_flag.value = false;
 }
 
+//关闭蓝牙连接
+async function  close_ble_link() {
+  crr_open_ble.gatt.disconnect();
+}
+
+
+//监听蓝牙断开
 function onDisconnected(event) {
   const device = event.target;
   console.log(`Device ${device.name} is disconnected.`);
@@ -304,26 +335,44 @@ function onDisconnected(event) {
 
 }
 
+//选择设备
 async function  open_ble_link(ble_mac) {
   crr_open_ble_info = ble_mac;
   window.electron.ipcRenderer.send('message-open-ble-mac', ble_mac.mac);
 
  }
 
- 
+ //接收命令端回复
+ function  cmd_read_cb(event) {
+      const value = new Uint8Array(event.target.value.buffer);
+      if(value[0] == 0)
+        {
+          const encoder = new TextDecoder('utf-8');
+          const mag_text = encoder.decode(value.subarray(1));
+          
+          ElNotification({
+            message: mag_text,
+            type: 'success',
+          })  
+        }
+
+ }
+ function  cmd_send(byteArray)
+ {
+    if(cmd_send_h)
+    {
+      const uint8Array = new Uint8Array(byteArray);
+      cmd_send_h.writeValue(uint8Array);
+    }
+ }
+
+
+
+
+ //接收数据显示到窗口
 let msg=ref([]);
 const out_scrollbar = ref();
 const out_scrollbar_div = ref();
-
-
-// function text_is_str(uint8Array) {
-//   for (const value of uint8Array) {
-//     if (value > 'min' || value > max) {
-//       return false;
-//     }
-//   }
-//   return true;
-// }
 function  text_out(event) {
       const value = new Uint8Array(event.target.value.buffer);
       console.log(value);
@@ -332,14 +381,14 @@ function  text_out(event) {
         if(dis_type.value == 'GBK')
         {
           const encoder = new TextDecoder('GBK');
-          const text_gbk = encoder.decode(value);
+          const text_gbk = encoder.decode(value);//增加结束符
           const buf = iconv.encode(text_gbk,'GBK');
           out_text = iconv.decode(buf,'utf-8');
         }
         else if(dis_type.value == 'utf-8')
         {
           const encoder = new TextDecoder('utf-8');
-          out_text = encoder.decode(value);
+          out_text = encoder.decode(value);//增加结束符
         }
         else{
           out_text = '';
@@ -356,10 +405,7 @@ function  text_out(event) {
       nextTick(() => {out_scrollbar.value.setScrollTop(out_scrollbar_div.value.clientHeight);})
 }
 
-async function  close_ble_link() {
-  crr_open_ble.gatt.disconnect();
-}
-
+//发送字符串数据
 let send_true_code = ref(true);
 let textarea_str=ref('');
 async function  send_data_str() {
@@ -377,6 +423,7 @@ async function  send_data_str() {
   }
 }
 
+//发送十六进制
 let textarea_hex=ref('');
 watch(textarea_hex,(newValue,OldValue) => {
 

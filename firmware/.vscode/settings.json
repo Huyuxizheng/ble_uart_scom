@@ -1,7 +1,7 @@
 {
   "C_Cpp.intelliSenseEngine": "default",
-  "idf.portWin": "COM17",
-  "idf.flashType": "JTAG",
+  "idf.portWin": "COM5",
+  "idf.flashType": "UART",
   "idf.adapterTargetName": "esp32c3",
   "idf.openOcdConfigs": [
     "board/esp32c3-builtin.cfg"
@@ -18,6 +18,8 @@
     "type_traits": "c",
     "utility": "c",
     "string": "c",
-    "string_view": "c"
+    "string_view": "c",
+    "esp_gap_ble_api.h": "c",
+    "esp_gatts_api.h": "c"
   }
 }
