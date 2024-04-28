@@ -6,17 +6,9 @@
 		{
 			"path": "pages/index/index",
 			"style": {
-				"navigationBarTitleText": "测试"
+				"navigationBarTitleText": " "
 				}
 		},
-		
-		{
-			"path": "pages/ble_link/ble_link",
-			"style": {
-				"navigationBarTitleText": "连接蓝牙"
-				}
-		},
-		
 		{
 			"path": "pages/mqtt_link/mqtt_link",
 			"style": {
@@ -25,8 +17,9 @@
 		}
 	],
 	"globalStyle": {
+		"navigationStyle":"default",
 		"navigationBarTextStyle": "black",
-		"navigationBarTitleText": "测试",
+		"navigationBarTitleText": " ",
 		"navigationBarBackgroundColor": "#F8F8F8",
 		"backgroundColor": "#F8F8F8"
 	},
