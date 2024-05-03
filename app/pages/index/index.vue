@@ -95,7 +95,7 @@
 				v-model="send_text"  :border="true" />
 			</u-col>
 			<u-col span="2">
-				<u-button style="height: 130rpx">发送</u-button>
+				<u-button style="height: 130rpx" @click="send_ble">发送</u-button>
 			</u-col>
 		</u-row>
 		
@@ -227,13 +227,51 @@
 				}, 
 				//连接设备
 				create_ble_link(ble_deviceId){
+					this.stop_f_ble();
 					uni.createBLEConnection({
 					  deviceId: ble_deviceId,
 					  success: (res)=> {
 						this.page_q = 'main';
 						this.ble_deviceId = ble_deviceId;
 						this.linkFlag = true;
-					    console.log('蓝牙设备连接成功');
+						// uni.onBLEConnectionStateChange((res) => {
+						//   // 该方法回调中可以用于处理连接意外断开等异常情况
+						// 	this.ble_deviceId = null;
+						// 	this.linkFlag = false;
+						// })
+						setTimeout(() => {
+							//this.get_ble();
+							uni.onBLECharacteristicValueChange((res) => {
+							   console.log(`characteristic ${res.characteristicId} has changed, now is ${res.value}`);
+							   console.log(res.value);
+							})
+							uni.notifyBLECharacteristicValueChange({
+							  state: true, // 启用 notify 功能
+							  deviceId: this.ble_deviceId,
+							  serviceId: '000000ff-0000-1000-8000-00805f9b34fb',
+							  characteristicId: '0000ff01-0000-1000-8000-00805f9b34fb',
+							  success(res) {
+								console.log('notifyBLECharacteristicValueChange success', res.errMsg)
+							  },
+							  fail(res) {
+								console.log('notifyBLECharacteristicValueChange fail', res.errMsg)
+							  }
+							});
+							uni.notifyBLECharacteristicValueChange({
+							  state: true, // 启用 notify 功能
+							  deviceId: this.ble_deviceId,
+							  serviceId: '000000ff-0000-1000-8000-00805f9b34fb',
+							  characteristicId: '0000ff03-0000-1000-8000-00805f9b34fb',
+							  success(res) {
+								console.log('notifyBLECharacteristicValueChange success', res.errMsg)
+							  },
+							  fail(res) {
+								console.log('notifyBLECharacteristicValueChange fail', res.errMsg)
+							  }
+							});
+							
+							console.log('蓝牙设备连接成功');
+							}, 1500 );
 					  }
 					})
 				},
@@ -252,18 +290,72 @@
 				},
 				//发送消息
 				send_ble(){
-					u8_buffer[0] = 30;
-					uni.writeBLECharacteristicValue({
-					  deviceId: this.ble_deviceId,
-					  serviceId: '000000ff-0000-1000-8000-00805f9b34fb',
-					  characteristicId: '0000ff02-0000-1000-8000-00805f9b34fb',
-					  value: buffer,
-					  success: function (res) {
-						console.log('数据写入成功')
-					  }
-					})
-				}
-	        
+					let u8_buffer = [30];
+					this.ble_mosi(0,u8_buffer);
+				},
+				//发送蓝牙命令/数据
+				//type==0为数据否则为命令通道
+				//arr ArrayBuffer
+				ble_mosi(type,arr){
+					if(!this.linkFlag)
+					{
+						return;
+					}
+					if(type == 0)
+					{
+						uni.writeBLECharacteristicValue({
+						  deviceId: this.ble_deviceId,
+						  serviceId: '000000ff-0000-1000-8000-00805f9b34fb',
+						  characteristicId: '0000ff02-0000-1000-8000-00805f9b34fb',
+						  value: arr,
+						  success: function (res) {
+							console.log('数据写入成功')
+						  }
+						})
+					}
+					else if(type == 1)
+					{
+						uni.writeBLECharacteristicValue({
+						  deviceId: this.ble_deviceId,
+						  serviceId: '000000ff-0000-1000-8000-00805f9b34fb',
+						  characteristicId: '0000ff04-0000-1000-8000-00805f9b34fb',
+						  value: arr,
+						  success: function (res) {
+							console.log('命令写入成功')
+						  }
+						})
+					}
+				},
+				ble_miso(ble_data){
+					if(!this.linkFlag)
+					{
+						return;
+					}
+					if(type == 0)
+					{
+						uni.writeBLECharacteristicValue({
+						  deviceId: this.ble_deviceId,
+						  serviceId: '000000ff-0000-1000-8000-00805f9b34fb',
+						  characteristicId: '0000ff02-0000-1000-8000-00805f9b34fb',
+						  value: arr,
+						  success: function (res) {
+							console.log('数据写入成功')
+						  }
+						})
+					}
+					else if(type == 1)
+					{
+						uni.writeBLECharacteristicValue({
+						  deviceId: this.ble_deviceId,
+						  serviceId: '000000ff-0000-1000-8000-00805f9b34fb',
+						  characteristicId: '0000ff04-0000-1000-8000-00805f9b34fb',
+						  value: arr,
+						  success: function (res) {
+							console.log('命令写入成功')
+						  }
+						})
+					}
+				},
 	        }
 	    }
 </script>
