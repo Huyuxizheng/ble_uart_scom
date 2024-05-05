@@ -22,7 +22,8 @@
     "@electron-toolkit/utils": "^3.0.0",
     "electron-updater": "^6.1.7",
     "element-plus": "^2.7.0",
-    "iconv-lite": "^0.6.3"
+    "iconv-lite": "^0.6.3",
+    "mqtt": "^5.5.5"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config": "^1.0.1",

@@ -3,42 +3,46 @@
   <div style="width: 100%">
     <el-container style="width: 100%">
 
-      <el-Aside v-if="!link_flag" width="200px" style="overflow: hidden;">    
+      <el-Aside width="200px" style="overflow: hidden;">   
+        <div v-if="!link_flag">
+          <el-tabs type="card"  class="link-tabs">
+          <el-tab-pane label="蓝牙连接"> 
+          <el-row style="height: 40px; ">
+            <el-space wrap :size="0">
 
-        <el-row style="height: 40px">
-          <el-space wrap :size="0">
+              <!-- 开始、停止搜索 -->
+              <el-button-group>
+                <el-button style="width: 40px" icon="Refresh"  @click="refreshBle" />
+                <!-- <el-button style="width: 40px" icon="Link" @click="open_ble_link"/> -->
+              </el-button-group>
+                <el-input v-model="ble_namePrefix" style="width: 160px" placeholder="过滤蓝牙名" />
 
-            <!-- 开始、停止搜索 -->
-            <el-button-group>
-              <el-button style="width: 40px" icon="Refresh"  @click="refreshBle" />
-              <!-- <el-button style="width: 40px" icon="Link" @click="open_ble_link"/> -->
-            </el-button-group>
-              <el-input v-model="ble_namePrefix" style="width: 160px" placeholder="过滤蓝牙名" />
+              
+            </el-space>
+          </el-row>
 
-            
-          </el-space>
-        </el-row>
+          <el-row v-if="bleNamelist_temp.length !== 0" style="width: 100%;" >
+              <!-- 蓝牙列表 --> 
+              <el-scrollbar   style="width: 100%;" height = "calc(100vh - 90px)" always>
+                <el-card class="ble-card "  shadow="hover" 
+                style="width: 90%; word-wrap: break-word; margin: 10px 10px 10px 0px; " 
+                body-style="padding: 10px; " 
+                v-for="item in bleNamelist_temp" 
+                @click = "open_ble_link(item)"
+                >
+                  <p class="ellipsis " style="margin: 0px 0px 0px 0px; ">{{ item.name }}</p><p style="margin: 5px 0px 0px 0px; ">{{ item.mac }}</p>
+                </el-card>
+              </el-scrollbar>
+          </el-row>
 
-        <el-row v-if="bleNamelist_temp.length !== 0" style="width: 100%;" >
-            <!-- 蓝牙列表 --> 
-            <el-scrollbar   style="width: 100%;" height = "calc(100vh - 50px)" always>
-              <el-card class="ble-card "  shadow="hover" 
-              style="width: 90%; word-wrap: break-word; margin: 10px 10px 10px 0px; " 
-              body-style="padding: 10px; " 
-              v-for="item in bleNamelist_temp" 
-              @click = "open_ble_link(item)"
-              >
-                <p class="ellipsis " style="margin: 0px 0px 0px 0px; ">{{ item.name }}</p><p style="margin: 5px 0px 0px 0px; ">{{ item.mac }}</p>
-              </el-card>
-            </el-scrollbar>
-        </el-row>
-
-        <el-row v-if="bleNamelist_temp.length === 0" style="width: 100%;" >
-          <el-empty style="margin-left: 30px; " :image-size="100" description="点击刷新搜索蓝牙设备" />
-        </el-row>
-      </el-Aside>
-
-      <el-Aside v-if="link_flag" width="200px" style="overflow: hidden;">   
+          <el-row v-if="bleNamelist_temp.length === 0" style="width: 100%;" >
+            <el-empty style="margin-left: 30px; " :image-size="100" description="点击刷新搜索蓝牙设备" />
+          </el-row>
+        </el-tab-pane>
+        <el-tab-pane label="网络连接">Config</el-tab-pane>
+  </el-tabs>
+      </div>
+      <div v-if="link_flag"> 
 
               <el-card class="ble-card-open "  shadow="always" 
               style="width: 99%; word-wrap: break-word; margin: 10px 10px 10px 0px; " 
@@ -77,6 +81,8 @@
                 :value="item.value"
               />
             </el-select>
+          </div>
+
       </el-Aside>
 
 
@@ -509,6 +515,13 @@ body {
  
 .ble-card-open-opt {
     animation: fadeInup 0.5s ease-in-out forwards; /* 淡入效果，持续时间1秒，缓动函数，在动画结束时保持最后一帧的状态 */
+}
+.link-tabs {
+  --el-tabs-header-height:35px !important;
+
+}
+.link-tabs > .el-tabs__header {
+  margin: 0px 0px 5px 0px; 
 }
 </style>
 
