@@ -1,5 +1,5 @@
 <template>
-  
+
   <div style="width: 100%">
     <el-container style="width: 100%">
 
@@ -39,7 +39,11 @@
             <el-empty style="margin-left: 30px; " :image-size="100" description="点击刷新搜索蓝牙设备" />
           </el-row>
         </el-tab-pane>
-        <el-tab-pane label="网络连接">Config</el-tab-pane>
+        <el-tab-pane label="网络连接">
+          
+          <el-button style="width: 40px" icon="Refresh"  @click="mq_init" />
+          <el-button style="width: 40px" icon="Refresh"  @click="mq_init2" />
+        </el-tab-pane>
   </el-tabs>
       </div>
       <div v-if="link_flag"> 
@@ -180,6 +184,8 @@ import iconv from  'iconv-lite';
 let baud_set = ref();
 let send_out_type = ref('str');
 let baud_conf = 9600;
+
+
 const baud_set_list = [
   {
     value: 9600,
@@ -465,6 +471,57 @@ async function  send_data_hex() {
     const uint8Array = hexToByteArray(textarea_hex.value)
     data_send_h.writeValue(uint8Array);
   }
+}
+
+
+
+
+const clientId = "emqx_vue3_00001";
+const username = "test1";
+const password = "123456";
+let client = null;
+function  mq_open()
+{
+  client = window.mqtt.connect("wss://h31a514e.ala.cn-hangzhou.emqxsl.cn:8084/mqtt", {
+    clientId:clientId,
+    username:username,
+    password:password,
+    clean: false
+    // ...other options
+  });
+}
+
+
+function mq_topic() {
+  if (client.connected) {
+    const topic = 'testtopic/12345';
+
+     
+    client.subscribe(
+      topic,
+      { qos: 0 },
+      (error, res) => {
+        if (error) {
+          console.error('Subscribe error: ', error)
+        } else {
+          console.log('Subscribed: ', res)
+        }
+      }
+    )
+  }
+}
+
+function mq_init()
+{
+  mq_open();
+}
+
+function mq_init2()
+{
+  mq_topic();
+  client.on("message", (topic, message) => {
+  console.log(`received message: ${message} from topic: ${topic}`);
+});
 }
 
 </script>

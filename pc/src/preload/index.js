@@ -1,6 +1,6 @@
 import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-import {mqtt} from 'mqtt'
+import mqtt from 'mqtt'
 
 // Custom APIs for renderer
 const api = {}

@@ -6,7 +6,12 @@
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+      content="connect-src 'self' wss://h31a514e.ala.cn-hangzhou.emqxsl.cn:8084/mqtt;
+      worker-src 'self' blob:;
+      default-src 'self';
+       script-src 'self'; 
+       style-src 'self' 'unsafe-inline';
+        img-src 'self' data:"
     />
   </head>
 

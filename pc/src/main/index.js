@@ -16,7 +16,8 @@ function createWindow() {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      contextIsolation: false, // Version 12.0.0 above are enabled by default
     }
   });
 
