@@ -1,5 +1,5 @@
 appId: com.electron.app
-productName: electron-app
+productName: blcomss
 directories:
   buildResources: build
 files:
@@ -11,8 +11,12 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: electron-app
+  executableName: blcomss
+  target:
+    - nsis
 nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}

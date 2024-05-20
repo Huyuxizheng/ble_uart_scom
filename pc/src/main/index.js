@@ -3,6 +3,9 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
+import Store from 'electron-store';
+
+const store = new Store();
 let mainWindow;
 function createWindow() {
   // Create the browser window.
@@ -27,6 +30,17 @@ function createWindow() {
 
   //处理bleApi
   bleApiHandle(mainWindow);
+
+
+  // 处理数据存储
+  ipcMain.on('setStore', (_, key, value) => {
+    store.set(key, value)
+  })
+
+  ipcMain.on('getStore', (_, key) => {
+    let value = store.get(key)
+    _.returnValue = value || ""
+  })
 
   //以下为显示窗口
   mainWindow.on('ready-to-show', () => {

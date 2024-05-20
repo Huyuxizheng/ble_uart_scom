@@ -1,5 +1,5 @@
 {
-  "name": "electron-app",
+  "name": "blcomss",
   "version": "1.0.0",
   "description": "An Electron application with Vue",
   "main": "./out/main/index.js",
@@ -20,6 +20,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
+    "electron-store": "^4.0.0",
     "electron-updater": "^6.1.7",
     "element-plus": "^2.7.0",
     "iconv-lite": "^0.6.3",

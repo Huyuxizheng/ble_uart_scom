@@ -40,11 +40,15 @@
           </el-row>
         </el-tab-pane>
         <el-tab-pane label="网络连接">
-          
-          <el-button style="width: 40px" icon="Refresh"  @click="mq_init" />
-          <el-button style="width: 40px" icon="Refresh"  @click="mq_init2" />
+
+        <el-input v-model="mqtt_link_name" style="width: 160px" placeholder="name" />
+          <el-button style="width: 40px" icon="Refresh"  @click="mqtt_random_name" />
+        <el-input v-model="mqtt_topic_base" style="width: 160px" placeholder="ID" />
+          <el-button style="width: 40px" icon="Check"  @click="mq_init" />
+
+              
         </el-tab-pane>
-  </el-tabs>
+      </el-tabs>
       </div>
       <div v-if="link_flag"> 
 
@@ -113,7 +117,7 @@
             />
           </el-col>
           
-          <el-col :span="5">
+          <el-col :span="7">
               <el-select
               v-model="dis_type"
               placeholder="显示方式"
@@ -127,6 +131,11 @@
                 :value="item.value"
               />
             </el-select>
+          </el-col>
+          
+          <el-col :span="5">
+          <el-button  size="small" @click="text_out_clr"> 清除接收窗口 </el-button>
+          
           </el-col>
           
         </el-row>
@@ -181,6 +190,9 @@
 import {watch,ref, onMounted,nextTick } from 'vue';
 import { ElNotification } from 'element-plus';
 import iconv from  'iconv-lite';
+
+//const Store = require('electron-store');
+
 let baud_set = ref();
 let send_out_type = ref('str');
 let baud_conf = 9600;
@@ -250,10 +262,13 @@ const dis_type_opt = [
 ]
 
 
+//const store = new Store();
 //初始化
 let ble_list= [];
 let bleNamelist_temp=ref([]);
-onMounted(() =>{
+let mqtt_link_name=ref('');
+onMounted(async () =>{
+
   window.electron.ipcRenderer.on("reader-ble-dev-list", (event, value) => {
     console.log(value);
     ble_list = [];
@@ -263,8 +278,19 @@ onMounted(() =>{
       bleNamelist_temp.value.push({name : item.deviceName,mac: item.deviceId}); // 处理每个元素...
     }
  });
-});
 
+
+ mqtt_link_name.value = window.electron.ipcRenderer.sendSync("getStore", 'mqtt_link_name');
+  if(!mqtt_link_name.value)
+  {
+    mqtt_link_name.value = 'pc_'+ Math.random().toString(16).substring(2, 8);; 
+    window.electron.ipcRenderer.send("setStore", 'mqtt_link_name', mqtt_link_name.value );
+   }
+});
+function  mqtt_random_name() {
+  mqtt_link_name.value = 'pc_'+ Math.random().toString(16).substring(2, 8);
+  window.electron.ipcRenderer.send("setStore", 'mqtt_link_name', mqtt_link_name.value );
+}
 
 let ble_namePrefix=ref();
 watch(ble_namePrefix,(newValue,OldValue) => {
@@ -416,6 +442,10 @@ function  text_out(event) {
       msg.value.push('['+currentdate.toLocaleString()+':'+currentdate.getMilliseconds().toString().padStart(3, '0')+'] '+out_text);
       nextTick(() => {out_scrollbar.value.setScrollTop(out_scrollbar_div.value.clientHeight);})
 }
+function  text_out_clr() {
+      msg.value=[];
+      nextTick(() => {out_scrollbar.value.setScrollTop(out_scrollbar_div.value.clientHeight);})
+}
 
 //发送字符串数据
 let send_true_code = ref(true);
@@ -475,6 +505,29 @@ async function  send_data_hex() {
 
 
 
+let mqtt_topic_base = ref('');
+watch(mqtt_topic_base,(newValue,OldValue) => {
+
+if(newValue == OldValue)
+{
+  return;
+}
+
+if(newValue.length)
+if((newValue.length%3==0 && newValue[newValue.length-1]==':')||
+( /^[0-9A-Fa-f:]+$/.test(newValue) ) 
+)
+{
+  mqtt_topic_base.value = newValue.replace(/:/g, "").replace(/(.{2})(?=.)/g, "$1:").substring(0, 17);
+}
+else 
+{
+  mqtt_topic_base.value = OldValue.replace(/:/g, "").replace(/(.{2})(?=.)/g, "$1:").substring(0, 17);
+}
+
+});
+
+
 
 const clientId = "emqx_vue3_00001";
 const username = "test1";
@@ -488,32 +541,55 @@ function  mq_open()
     password:password,
     clean: false
     // ...other options
+  }).on('connect', function () {
+    client.subscribe(
+      'testtopic/'+mqtt_topic_base.value.replace(/:/g, '_'),
+      { qos: 0 },
+      (error, res) => {
+        if (error) {
+          console.error('Subscribe error: ', error);
+        } else {
+          ElNotification({
+            message: '连接成功',
+            type: 'info',
+            })
+        }
+      }
+    )
+  })
+  .on('close', function () {
+          ElNotification({
+            message: '连接断开',
+            type: 'info',
+            })
+  })
+  .on('message', function (topic, message) {
+  console.log(`Received message on topic ${topic}: ${message.toString()}`);
   });
 }
 
 
 function mq_topic() {
   if (client.connected) {
-    const topic = 'testtopic/12345';
-
-     
-    client.subscribe(
-      topic,
-      { qos: 0 },
-      (error, res) => {
-        if (error) {
-          console.error('Subscribe error: ', error)
-        } else {
-          console.log('Subscribed: ', res)
-        }
-      }
-    )
+    
+    
   }
 }
 
 function mq_init()
 {
-  mq_open();
+  if(mqtt_topic_base.value.length == 17)
+  {
+    mq_open();
+  }
+  else
+  {
+    
+    ElNotification({
+       message: 'ID不正确',
+       type: 'info',
+      })
+  }
 }
 
 function mq_init2()
